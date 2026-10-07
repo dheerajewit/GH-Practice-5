@@ -1,25 +1,31 @@
-name: 'Get & Cache dependencies'
+name: Get & Cache dependencies
 
-description: 'Get the dependencies (via npm) and cache them.'
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-inputs:
-  caching:
-    description: 'Whether to cache dependencies or not.'
-    required: false
-    default: 'true'
+jobs:
+  cache-dependencies:
+    runs-on: ubuntu-latest
 
-runs:
-  using: 'composite'
-  steps:
-    - name: Cache dependencies
-      if: inputs.caching == 'true'
-      id: cache
-      uses: actions/cache@v3
-      with:
-        path: node_modules
-        key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true' || inputs.caching != 'true'
-      run: npm ci
-      shell: bash
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
